@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Health Dashboard - 7 Days Tracker</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Prompt -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">แดชบอร์ดสุขภาพส่วนตัว (7 วันย้อนหลัง)</h1>
+        <p class="text-sm text-slate-500 mt-1">สรุปผลการออกกำลังกาย การนอนหลับ และการดื่มน้ำประจำสัปดาห์</p>
+      </div>
+      <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+          น้ำหนักตัว: 85 กก.
+        </span>
+        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+          เป้าหมายออกกำลังกาย: 5 วัน/สัปดาห์
+        </span>
+      </div>
+    </header>
+
+    <!-- KPI Cards (4 ตัว) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- KPI 1: จำนวนวันออกกำลังกาย -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-slate-500">จำนวนวันออกกำลังกาย</span>
+          <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">🏃‍♂️</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span id="kpi-days" class="text-3xl font-bold text-slate-800">5</span>
+          <span class="text-sm text-slate-500">/ 5 วัน</span>
+        </div>
+        <p id="kpi-days-status" class="mt-2 text-xs font-medium text-emerald-600">✓ บรรลุเป้าหมายประจำสัปดาห์</p>
+      </div>
+
+      <!-- KPI 2: เวลารวม -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-slate-500">เวลาออกกำลังกายรวม</span>
+          <span class="p-2 bg-amber-50 text-amber-600 rounded-lg">⏱️</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span id="kpi-minutes" class="text-3xl font-bold text-slate-800">210</span>
+          <span class="text-sm text-slate-500">นาที</span>
+        </div>
+        <p id="kpi-minutes-status" class="mt-2 text-xs font-medium text-emerald-600">✓ เกินเกณฑ์มาตรฐาน 150 นาที/สัปดาห์</p>
+      </div>
+
+      <!-- KPI 3: ชั่วโมงนอนเฉลี่ย -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-slate-500">ชั่วโมงนอนเฉลี่ย</span>
+          <span class="p-2 bg-purple-50 text-purple-600 rounded-lg">🌙</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span id="kpi-sleep" class="text-3xl font-bold text-slate-800">7.36</span>
+          <span class="text-sm text-slate-500">ชม./วัน</span>
+        </div>
+        <p id="kpi-sleep-status" class="mt-2 text-xs font-medium text-emerald-600">✓ อยู่ในเกณฑ์ดี (7-8 ชม.)</p>
+      </div>
+
+      <!-- KPI 4: น้ำเฉลี่ย -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-slate-500">ปริมาณน้ำดื่มเฉลี่ย</span>
+          <span class="p-2 bg-sky-50 text-sky-600 rounded-lg">💧</span>
+        </div>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span id="kpi-water" class="text-3xl font-bold text-slate-800">2.16</span>
+          <span class="text-sm text-slate-500">ลิตร/วัน</span>
+        </div>
+        <p id="kpi-water-status" class="mt-2 text-xs font-medium text-amber-600">! ควรเพิ่มอีกนิด (เป้าหมาย 2.5+ ลิตร)</p>
+      </div>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-800">แนวโน้มชั่วโมงการนอนและปริมาณน้ำดื่ม (7 วัน)</h2>
+          <p class="text-xs text-slate-500">เปรียบเทียบชั่วโมงการนอน (เส้นสีม่วง) และปริมาณน้ำดื่ม (แท่งสีฟ้า)</p>
+        </div>
+      </div>
+      <div class="relative h-72 w-full">
+        <canvas id="healthChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Daily Activities Table -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-800">รายการกิจกรรมสุขภาพรายวัน</h2>
+          <p class="text-xs text-slate-500">คลิก "แก้ไข" เพื่อปรับปรุงตัวเลขและดูการคำนวณอัปเดตทันที</p>
+        </div>
+        <button onclick="resetData()" class="self-start sm:self-auto text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition">
+          รีเซ็ตข้อมูลเริ่มต้น
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
+              <th class="py-3.5 px-6 font-medium">วันที่</th>
+              <th class="py-3.5 px-6 font-medium">กิจกรรมออกกำลังกาย</th>
+              <th class="py-3.5 px-6 font-medium">เวลา (นาที)</th>
+              <th class="py-3.5 px-6 font-medium">การนอน (ชม.)</th>
+              <th class="py-3.5 px-6 font-medium">ดื่มน้ำ (ลิตร)</th>
+              <th class="py-3.5 px-6 font-medium text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="activity-table-body" class="divide-y divide-slate-100 text-sm">
+            <!-- Data populated via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+      <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">แก้ไขข้อมูลวันที่</h3>
+      <form id="edit-form" class="space-y-4">
+        <input type="hidden" id="edit-index" />
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">กิจกรรมออกกำลังกาย</label>
+          <input type="text" id="edit-activity" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="เช่น วิ่ง, ปั่นจักรยาน, พักผ่อน" required />
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">เวลา (นาที)</label>
+            <input type="number" id="edit-minutes" min="0" step="5" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">นอน (ชม.)</label>
+            <input type="number" id="edit-sleep" min="0" max="24" step="0.1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">น้ำ (ลิตร)</label>
+            <input type="number" id="edit-water" min="0" max="10" step="0.1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 text-white font-medium hover:bg-indigo-700 rounded-lg transition">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ข้อมูลเริ่มต้น 7 วัน
+    const initialData = [
+      { date: '7 ก.ย. (จันทร์)', activity: 'วิ่ง', minutes: 30, sleep: 7.2, water: 1.8 },
+      { date: '8 ก.ย. (อังคาร)', activity: 'ปั่นจักรยาน', minutes: 45, sleep: 6.5, water: 1.5 },
+      { date: '9 ก.ย. (พุธ)', activity: 'พักผ่อน (วันพัก)', minutes: 0, sleep: 7.8, water: 2.2 },
+      { date: '10 ก.ย. (พฤหัสบดี)', activity: 'เวทเทรนลิ่ง', minutes: 40, sleep: 7.0, water: 2.5 },
+      { date: '11 ก.ย. (ศุกร์)', activity: 'วิ่ง', minutes: 35, sleep: 6.8, water: 2.0 },
+      { date: '12 ก.ย. (เสาร์)', activity: 'ว่ายน้ำ', minutes: 60, sleep: 8.2, water: 2.6 },
+      { date: '13 ก.ย. (อาทิตย์)', activity: 'พักผ่อน (วันพัก)', minutes: 0, sleep: 8.0, water: 2.5 }
+    ];
+
+    let healthData = JSON.parse(JSON.stringify(initialData));
+    let chartInstance = null;
+
+    // ฟังก์ชันอัปเดตหน้าจอทั้งหมด
+    function updateDashboard() {
+      renderKPIs();
+      renderTable();
+      renderChart();
+    }
+
+    // คำนวณและแสดง KPI 4 ตัว
+    function renderKPIs() {
+      const activeDays = healthData.filter(d => d.minutes > 0).length;
+      const totalMinutes = healthData.reduce((sum, d) => sum + Number(d.minutes), 0);
+      const avgSleep = (healthData.reduce((sum, d) => sum + Number(d.sleep), 0) / healthData.length).toFixed(2);
+      const avgWater = (healthData.reduce((sum, d) => sum + Number(d.water), 0) / healthData.length).toFixed(2);
+
+      document.getElementById('kpi-days').textContent = activeDays;
+      document.getElementById('kpi-minutes').textContent = totalMinutes;
+      document.getElementById('kpi-sleep').textContent = avgSleep;
+      document.getElementById('kpi-water').textContent = avgWater;
+
+      // สถานะวันออกกำลังกาย
+      const daysStatus = document.getElementById('kpi-days-status');
+      if (activeDays >= 5) {
+        daysStatus.textContent = '✓ บรรลุเป้าหมายประจำสัปดาห์';
+        daysStatus.className = 'mt-2 text-xs font-medium text-emerald-600';
+      } else {
+        daysStatus.textContent = `! ขาดอีก ${5 - activeDays} วันจะครบเป้าหมาย`;
+        daysStatus.className = 'mt-2 text-xs font-medium text-amber-600';
+      }
+
+      // สถานะเวลารวม
+      const minStatus = document.getElementById('kpi-minutes-status');
+      if (totalMinutes >= 150) {
+        minStatus.textContent = '✓ เกินเกณฑ์มาตรฐาน 150 นาที/สัปดาห์';
+        minStatus.className = 'mt-2 text-xs font-medium text-emerald-600';
+      } else {
+        minStatus.textContent = '! ต่ำกว่าเกณฑ์แนะนำ 150 นาที/สัปดาห์';
+        minStatus.className = 'mt-2 text-xs font-medium text-amber-600';
+      }
+
+      // สถานะการนอน
+      const sleepStatus = document.getElementById('kpi-sleep-status');
+      if (avgSleep >= 7 && avgSleep <= 9) {
+        sleepStatus.textContent = '✓ อยู่ในเกณฑ์ดี (7-8 ชม.)';
+        sleepStatus.className = 'mt-2 text-xs font-medium text-emerald-600';
+      } else {
+        sleepStatus.textContent = '! ควรพักผ่อนให้ได้ 7-8 ชม./คืน';
+        sleepStatus.className = 'mt-2 text-xs font-medium text-amber-600';
+      }
+
+      // สถานะดื่มน้ำ (เกณฑ์ 85 กก. ~ 2.5 ลิตร)
+      const waterStatus = document.getElementById('kpi-water-status');
+      if (avgWater >= 2.5) {
+        waterStatus.textContent = '✓ ดื่มน้ำเพียงพอสำหรับน้ำหนัก 85 กก.';
+        waterStatus.className = 'mt-2 text-xs font-medium text-emerald-600';
+      } else {
+        waterStatus.textContent = '! ควรเพิ่มอีกนิด (เป้าหมาย 2.5+ ลิตร)';
+        waterStatus.className = 'mt-2 text-xs font-medium text-amber-600';
+      }
+    }
+
+    // แสดงรายการในตาราง
+    function renderTable() {
+      const tbody = document.getElementById('activity-table-body');
+      tbody.innerHTML = '';
+
+      healthData.forEach((item, index) => {
+        const isRest = item.minutes === 0;
+        const badgeClass = isRest
+          ? 'bg-slate-100 text-slate-600'
+          : 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+
+        const sleepClass = item.sleep >= 7 ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium';
+        const waterClass = item.water >= 2.5 ? 'text-sky-600 font-medium' : 'text-slate-700';
+
+        const row = `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-4 px-6 font-medium text-slate-800 whitespace-nowrap">${item.date}</td>
+            <td class="py-4 px-6 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass}">
+                ${item.activity}
+              </span>
+            </td>
+            <td class="py-4 px-6 text-slate-600 whitespace-nowrap">${item.minutes > 0 ? item.minutes + ' นาที' : '-'}</td>
+            <td class="py-4 px-6 whitespace-nowrap ${sleepClass}">${item.sleep} ชม.</td>
+            <td class="py-4 px-6 whitespace-nowrap ${waterClass}">${item.water} ลิตร</td>
+            <td class="py-4 px-6 text-right whitespace-nowrap">
+              <button onclick="openModal(${index})" class="text-xs font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
+                แก้ไข
+              </button>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    // สร้าง/อัปเดตกราฟ Chart.js
+    function renderChart() {
+      const ctx = document.getElementById('healthChart').getContext('2d');
+      const labels = healthData.map(d => d.date.split(' ')[0] + ' ' + d.date.split(' ')[1]);
+      const sleepData = healthData.map(d => d.sleep);
+      const waterData = healthData.map(d => d.water);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'ชั่วโมงการนอน (ชม.)',
+              data: sleepData,
+              type: 'line',
+              borderColor: '#8b5cf6',
+              backgroundColor: '#8b5cf6',
+              borderWidth: 3,
+              pointRadius: 5,
+              pointBackgroundColor: '#ffffff',
+              pointBorderColor: '#8b5cf6',
+              pointBorderWidth: 2,
+              tension: 0.3,
+              yAxisID: 'y'
+            },
+            {
+              label: 'ปริมาณน้ำดื่ม (ลิตร)',
+              data: waterData,
+              backgroundColor: 'rgba(14, 165, 233, 0.25)',
+              borderColor: '#0ea5e9',
+              borderWidth: 1.5,
+              borderRadius: 6,
+              barPercentage: 0.5,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: { family: 'Prompt', size: 12 },
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              titleFont: { family: 'Prompt' },
+              bodyFont: { family: 'Prompt' }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Prompt', size: 12 } }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              min: 0,
+              max: 10,
+              title: {
+                display: true,
+                text: 'ชั่วโมงการนอน (ชม.)',
+                font: { family: 'Prompt', size: 11 },
+                color: '#8b5cf6'
+              },
+              ticks: { font: { family: 'Prompt', size: 11 } }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              min: 0,
+              max: 4,
+              grid: { drawOnChartArea: false },
+              title: {
+                display: true,
+                text: 'ปริมาณน้ำ (ลิตร)',
+                font: { family: 'Prompt', size: 11 },
+                color: '#0ea5e9'
+              },
+              ticks: { font: { family: 'Prompt', size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    // จัดการ Modal แก้ไขข้อมูล
+    function openModal(index) {
+      const item = healthData[index];
+      document.getElementById('edit-index').value = index;
+      document.getElementById('modal-title').textContent = `แก้ไขข้อมูล: ${item.date}`;
+      document.getElementById('edit-activity').value = item.activity;
+      document.getElementById('edit-minutes').value = item.minutes;
+      document.getElementById('edit-sleep').value = item.sleep;
+      document.getElementById('edit-water').value = item.water;
+
+      const modal = document.getElementById('edit-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('edit-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    document.getElementById('edit-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const index = document.getElementById('edit-index').value;
+      healthData[index].activity = document.getElementById('edit-activity').value;
+      healthData[index].minutes = Number(document.getElementById('edit-minutes').value);
+      healthData[index].sleep = Number(document.getElementById('edit-sleep').value);
+      healthData[index].water = Number(document.getElementById('edit-water').value);
+
+      closeModal();
+      updateDashboard();
+    });
+
+    function resetData() {
+      healthData = JSON.parse(JSON.stringify(initialData));
+      updateDashboard();
+    }
+
+    // เริ่มต้นทำงาน
+    updateDashboard();
+  </script>
+</body>
+</html>
